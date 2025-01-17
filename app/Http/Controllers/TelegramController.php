@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -9,7 +10,9 @@ class TelegramController extends Controller
 {
     public function index()
     {
-        return view('telegram.index');
+        $models = User::all();
+
+        return view('telegram.index', ['models' => $models]);
     }
 
     public function store(Request $request)
@@ -18,6 +21,7 @@ class TelegramController extends Controller
         $url = "https://api.telegram.org/bot$token";
 
         $data = $request->validate([
+            'user' => 'nullable',
             'text' => 'nullable|string|max:255',
             'file' => 'nullable',
         ]);
@@ -28,14 +32,6 @@ class TelegramController extends Controller
                 'chat_id' => '5122685168',
                 'parse_mode' => 'HTML',
                 'text' => "<i>" . ($data['text'] ?? 'Matn mavjud emas') . "</i>",
-                'reply_markup' => json_encode([
-                    'inline_keyboard' => [
-                        [
-                            ['text' => 'Qabul qilish✅', 'callback_data' => 'button_1'],
-                            ['text' => 'Bekor qilish🚫', 'callback_data' => 'button_2']
-                        ],
-                    ],
-                ]),
             ]);
         }
         if ($request->hasFile('file')) {
@@ -64,7 +60,29 @@ class TelegramController extends Controller
                     'caption' => $data['text'] ?? null,
                 ]);
             }
-        }
+            }
+            if ($request->has('user')) {
+                $user = User::find($data['user']);
+    
+                if ($user) {
+                    $userData = "<b>Foydalanuvchi ma'lumotlari:</b>\n";
+                    $userData .= "Ismi: " . ($user->name ?? 'Noma\'lum') . "\n";
+                    $userData .= "Email: " . ($user->email ?? 'Noma\'lum') . "\n";
+    
+                    Http::post("$url/sendMessage", [
+                        'chat_id' => '5122685168',
+                        'parse_mode' => 'HTML',
+                        'text' => $userData,
+                    ]);
+                } else {
+                    Http::post("$url/sendMessage", [
+                        'chat_id' => '5122685168',
+                        'parse_mode' => 'HTML',
+                        'text' => "<i>Foydalanuvchi topilmadi</i>",
+                    ]);
+                }
+            }
+    
     
         return back()->with('success', 'Xabar yuborildi');
     }

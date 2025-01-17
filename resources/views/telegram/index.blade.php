@@ -22,6 +22,13 @@
                 @endif
                 <form action="{{ route('telegram.send') }}" method="post" enctype="multipart/form-data">
                     @csrf
+                    <div>
+                        <select name="user" class="form-select mb-3">
+                            @foreach ($models as $model)
+                                <option value="{{$model->id}}">{{$model->name}}</option>
+                            @endforeach
+                        </select>
+                    </div>
                     <input type="text" name="text" class="form-control">
                     <input type="file" name="file" class="form-control mt-3">
                     <input type="submit" name="ok" value="Send" class="btn btn-primary mt-3">
